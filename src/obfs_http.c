@@ -34,20 +34,10 @@
 static const char *http_request_template =
     "%s %s HTTP/1.1\r\n"
     "Host: %s\r\n"
-    "User-Agent: curl/7.%d.%d\r\n"
-    "Upgrade: websocket\r\n"
-    "Connection: Upgrade\r\n"
-    "Sec-WebSocket-Key: %s\r\n"
-    "Content-Length: %lu\r\n"
     "\r\n";
 
 static const char *http_response_template =
-    "HTTP/1.1 101 Switching Protocols\r\n"
-    "Server: nginx/1.%d.%d\r\n"
-    "Date: %s\r\n"
-    "Upgrade: websocket\r\n"
-    "Connection: Upgrade\r\n"
-    "Sec-WebSocket-Accept: %s\r\n"
+    "HTTP/1.1 200 OK\r\n"
     "\r\n";
 
 static int obfs_http_request(buffer_t *, size_t, obfs_t *);
@@ -83,28 +73,31 @@ obfs_http_request(buffer_t *buf, size_t cap, obfs_t *obfs)
     if (obfs == NULL || obfs->obfs_stage != 0) return 0;
     obfs->obfs_stage++;
 
-    static int major_version = 0;
-    static int minor_version = 0;
+    //static int major_version = 0;
+    //static int minor_version = 0;
 
-    major_version = major_version ? major_version : rand() % 51;
-    minor_version = minor_version ? minor_version : rand() % 2;
+    //major_version = major_version ? major_version : rand() % 51;
+    //minor_version = minor_version ? minor_version : rand() % 2;
 
     char host_port[256];
     char http_header[512];
-    uint8_t key[16];
-    char b64[64];
+    //uint8_t key[16];
+    //char b64[64];
 
     if (obfs_http->port != 80)
         snprintf(host_port, sizeof(host_port), "%s:%d", obfs_http->host, obfs_http->port);
     else
         snprintf(host_port, sizeof(host_port), "%s", obfs_http->host);
 
-    rand_bytes(key, 16);
-    base64_encode(b64, 64, key, 16);
+    //rand_bytes(key, 16);
+    //base64_encode(b64, 64, key, 16);
 
+    //size_t obfs_len =
+    //    snprintf(http_header, sizeof(http_header), http_request_template, obfs_http->method,
+    //             obfs_http->uri, host_port, major_version, minor_version, b64, buf->len);
     size_t obfs_len =
         snprintf(http_header, sizeof(http_header), http_request_template, obfs_http->method,
-                 obfs_http->uri, host_port, major_version, minor_version, b64, buf->len);
+                 obfs_http->uri, host_port);
     size_t buf_len = buf->len;
 
     brealloc(buf, obfs_len + buf_len, cap);
@@ -123,31 +116,33 @@ obfs_http_response(buffer_t *buf, size_t cap, obfs_t *obfs)
     if (obfs == NULL || obfs->obfs_stage != 0) return 0;
     obfs->obfs_stage++;
 
-    static int major_version = 0;
-    static int minor_version = 0;
+    //static int major_version = 0;
+    //static int minor_version = 0;
 
-    major_version = major_version ? major_version : rand() % 11;
-    minor_version = minor_version ? minor_version : rand() % 12;
+    //major_version = major_version ? major_version : rand() % 11;
+    //minor_version = minor_version ? minor_version : rand() % 12;
 
     char http_header[512];
-    char datetime[64];
-    uint8_t key[16];
-    char b64[64];
+    //char datetime[64];
+    //uint8_t key[16];
+    //char b64[64];
 
-    time_t now;
-    struct tm *tm_now;
+    //time_t now;
+    //struct tm *tm_now;
 
-    time(&now);
-    tm_now = localtime(&now);
-    strftime(datetime, 64, "%a, %d %b %Y %H:%M:%S GMT", tm_now);
+    //time(&now);
+    //tm_now = localtime(&now);
+    //strftime(datetime, 64, "%a, %d %b %Y %H:%M:%S GMT", tm_now);
 
-    rand_bytes(key, 16);
-    base64_encode(b64, 64, key, 16);
+    //rand_bytes(key, 16);
+    //base64_encode(b64, 64, key, 16);
 
     size_t buf_len  = buf->len;
+    //size_t obfs_len =
+    //    snprintf(http_header, sizeof(http_header), http_response_template,
+    //             major_version, minor_version, datetime, b64);
     size_t obfs_len =
-        snprintf(http_header, sizeof(http_header), http_response_template,
-                 major_version, minor_version, datetime, b64);
+        snprintf(http_header, sizeof(http_header), "%s", http_response_template);
 
     brealloc(buf, obfs_len + buf_len, cap);
 
@@ -200,9 +195,9 @@ check_http_header(buffer_t *buf)
     if (lfpos == NULL) return OBFS_NEED_MORE;
     if (len < 15) return OBFS_ERROR;
     if (strncasecmp(lfpos - 9, "HTTP/1.1", 8) != 0) return OBFS_ERROR;
-    if ( obfs_http->method != NULL && strncasecmp(data, obfs_http->method, strlen(obfs_http->method)) != 0)
+    if (obfs_http->method != NULL && strncasecmp(data, obfs_http->method, strlen(obfs_http->method)) != 0)
         return OBFS_ERROR;
-
+    /*
     {
         char *protocol;
         int result = get_header("Upgrade:", data, len, &protocol);
@@ -219,7 +214,7 @@ check_http_header(buffer_t *buf)
             free(protocol);
         }
     }
-
+    */
     if (obfs_http->host != NULL) {
         char *hostname;
         int i;
